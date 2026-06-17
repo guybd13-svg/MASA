@@ -387,13 +387,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       {/* Floating Control Bar */}
       <div className="map-floating-bar">
         {uploadStatus === 'idle' && (
-          <>
-            <span className="upload-info-text">העלה תמונה למיקום אוטומטי מיידי במפה (EXIF GPS) 📸</span>
-            <button className="btn-upload-trigger" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={14} style={{ marginLeft: '6px' }} />
-              <span>העלה תמונה</span>
-            </button>
-          </>
+          <button className="btn-upload-trigger" onClick={() => fileInputRef.current?.click()}>
+            <Upload size={14} style={{ marginLeft: '6px' }} />
+            <span>העלה תמונה</span>
+          </button>
         )}
 
         {(uploadStatus === 'reading' || uploadStatus === 'error') && (
