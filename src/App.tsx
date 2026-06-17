@@ -871,9 +871,9 @@ function App() {
         </div>
 
         {/* Glass screen overlay for other tabs */}
-        {currentScreen !== 'map' && (
-          <div className="glass-screen-overlay">
-            {currentScreen === 'budget' && (
+        <div className={`glass-screen-overlay ${currentScreen !== 'map' ? 'active' : ''}`}>
+          {currentScreen === 'budget' && (
+            <div className="animate-slide-scale">
               <BudgetScreen
                 expenses={expenses}
                 budgetLimit={budgetLimit}
@@ -892,18 +892,22 @@ function App() {
                   }
                 }}
               />
-            )}
+            </div>
+          )}
 
-            {currentScreen === 'timeline' && (
+          {currentScreen === 'timeline' && (
+            <div className="animate-slide-scale">
               <TimelineScreen
                 entries={timelineEntries}
                 onUpdateNote={handleUpdateTimelineNote}
                 onDeleteEntry={handleDeleteTimelineEntry}
                 highlightedEntryId={highlightedEntryId}
               />
-            )}
+            </div>
+          )}
 
-            {currentScreen === 'checklist' && (
+          {currentScreen === 'checklist' && (
+            <div className="animate-slide-scale">
               <ChecklistScreen
                 packingItems={packingItems}
                 placesItems={placesItems}
@@ -911,9 +915,11 @@ function App() {
                 onToggleItem={handleToggleChecklistItem}
                 onDeleteItem={handleDeleteChecklistItem}
               />
-            )}
+            </div>
+          )}
 
-            {currentScreen === 'settings' && (
+          {currentScreen === 'settings' && (
+            <div className="animate-slide-scale">
               <SettingsScreen
                 user={user}
                 mapStyle={mapStyle}
@@ -921,9 +927,9 @@ function App() {
                 onUpdateMapStyle={setMapStyle}
                 onClearAllData={handleClearAllData}
               />
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </main>
 
 
