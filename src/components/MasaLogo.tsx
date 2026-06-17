@@ -1,0 +1,72 @@
+import React from 'react';
+
+interface MasaLogoProps {
+  className?: string;
+  size?: number;
+}
+
+export const MasaLogo: React.FC<MasaLogoProps> = ({ className = '', size = 32 }) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      style={{ display: 'inline-block', verticalAlign: 'middle' }}
+    >
+      <defs>
+        {/* Colorful gradient matching the travel theme */}
+        <linearGradient id="masa-logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#9d4edd" /> {/* Purple */}
+          <stop offset="50%" stopColor="#ff70a6" /> {/* Pink */}
+          <stop offset="100%" stopColor="#4ea8de" /> {/* Blue */}
+        </linearGradient>
+        
+        {/* Soft neon glow filter */}
+        <filter id="masa-logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+
+      {/* Abstract Outer Ring (Represents the Globe/Travel Horizon) */}
+      <circle
+        cx="50"
+        cy="50"
+        r="44"
+        stroke="url(#masa-logo-gradient)"
+        strokeWidth="3.5"
+        strokeDasharray="6 6"
+        opacity="0.8"
+      />
+
+      {/* Inside: Abstract geometric 'M' that forms a Compass Needle + Mountain Peak */}
+      {/* Represents Journeys (Masa), Mountains (Destinations), and Navigation */}
+      <path
+        d="M26 74 L42 32 L50 48 L58 32 L74 74 L50 62 Z"
+        fill="url(#masa-logo-gradient)"
+        filter="url(#masa-logo-glow)"
+      />
+
+      {/* Central compass dividing line for depth */}
+      <path
+        d="M50 32 L50 62"
+        stroke="#ffffff"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        opacity="0.75"
+      />
+
+      {/* Core Glowing Coordinate Pin */}
+      <circle
+        cx="50"
+        cy="40"
+        r="4.5"
+        fill="#ffffff"
+        filter="url(#masa-logo-glow)"
+      />
+    </svg>
+  );
+};
