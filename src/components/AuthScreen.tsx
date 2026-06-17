@@ -147,22 +147,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           )}
         </button>
 
-        <button
-          className="btn-fallback-login"
-          onClick={handleStartGoogleLogin}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#a29bfe',
-            fontSize: '13px',
-            textDecoration: 'underline',
-            marginTop: '16px',
-            cursor: 'pointer',
-            opacity: 0.7
-          }}
-        >
-          התחברות ידנית (במידה ואין חיבור לשרת)
-        </button>
 
         <p className="auth-disclaimer">
           בלחיצה על התחברות, אתה מסכים לתנאי השימוש ומדיניות הפרטיות של MASA.

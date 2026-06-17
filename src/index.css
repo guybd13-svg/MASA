@@ -421,6 +421,7 @@ body::after {
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 16px;
 }
 
@@ -432,7 +433,7 @@ body::after {
   background-color: #ffffff;
   color: #1f2937;
   border: none;
-  padding: 14px 24px;
+  padding: 12px 24px;
   border-radius: 16px;
   font-family: var(--font-family);
   font-size: 15px;
@@ -441,6 +442,7 @@ body::after {
   transition: var(--transition-smooth);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   width: 100%;
+  max-width: 280px;
 }
 
 .btn-google:hover {
