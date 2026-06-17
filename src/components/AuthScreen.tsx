@@ -32,9 +32,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     const isConfigured = !!(url && key && !url.includes('your-supabase-project-id'));
 
     if (!isConfigured) {
-      alert(
-        "שגיאה: פרויקט Supabase לא מוגדר בקובץ הגדרות הסביבה (.env.local).\n\nאנא הגדר את מפתחות ה-API האמיתיים שלך מתוך לוח הבקרה של Supabase ולאחר מכן רענן את הדף."
-      );
+      console.warn("Supabase not configured, falling back to simulated Google sign-in modal.");
+      handleStartGoogleLogin();
       setIsLoading(false);
       return;
     }

@@ -48,7 +48,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'reading' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   const [isSelectingLocation, setIsSelectingLocation] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState<L.LatLng | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const tempMarkerRef = useRef<L.Marker | null>(null);
 
   // Refs for tracking props/state inside Leaflet event listeners to prevent stale closures
   const onAddEntryRef = useRef(onAddEntry);
@@ -60,6 +63,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
   useEffect(() => {
     onNavigateToTimelineRef.current = onNavigateToTimeline;
   }, [onNavigateToTimeline]);
+
+  const isSelectingLocationRef = useRef(isSelectingLocation);
+  useEffect(() => {
+    isSelectingLocationRef.current = isSelectingLocation;
+  }, [isSelectingLocation]);
 
   const pendingImageRef = useRef<{ url: string; fileName: string } | null>(null);
 
@@ -85,55 +93,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
     tileLayerRef.current = tileLayer;
     markersGroup.current = L.layerGroup().addTo(map);
 
-    // Map click handler for placing photos manually when GPS EXIF is missing
-    map.on('click', async (e: L.LeafletMouseEvent) => {
-      if (pendingImageRef.current) {
-        const { lat, lng } = e.latlng;
-        const { url } = pendingImageRef.current;
-
-        // Reset the pending reference immediately to prevent double submissions
-        pendingImageRef.current = null;
-        setIsSelectingLocation(false);
-        setUploadStatus('reading');
-        setStatusMessage('מזהה את המיקום שבחרת במפה... 🌍');
-
-        try {
-          console.log(`קליק על המפה בקואורדינטות: lat=${lat}, lng=${lng}. מפענח שם מיקום...`);
-          const locationName = await reverseGeocode(lat, lng);
-          const photoDate = new Date().toLocaleDateString('he-IL');
-
-          console.log("מיקום פוענח בהצלחה:", locationName);
-          setStatusMessage(`המיקום נשמר: ${locationName} ✨`);
-
-          // Add to timeline/map
-          onAddEntryRef.current({
-            imageUrl: url,
-            note: locationName,
-            date: photoDate,
-            location: {
-              lat,
-              lng,
-              name: locationName
-            }
-          });
-
-          // Fly map to the selected location
-          map.flyTo([lat, lng], 10);
-          setUploadStatus('success');
-
-          setTimeout(() => {
-            setUploadStatus('idle');
-            setStatusMessage('');
-          }, 4000);
-        } catch (err) {
-          console.error("Failed to reverse geocode clicked point:", err);
-          setUploadStatus('error');
-          setStatusMessage('שגיאה בזיהוי המיקום ⚠️');
-          setTimeout(() => {
-            setUploadStatus('idle');
-            setStatusMessage('');
-          }, 4000);
-        }
+    // Map click handler to update manual placement coordinates when selecting location
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      if (isSelectingLocationRef.current) {
+        setPendingCoords(e.latlng);
       }
     });
 
@@ -159,6 +122,54 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       }
     };
   }, []);
+
+  // Synchronize temporary draggable marker for manual location placement
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    // Remove existing temporary marker
+    if (tempMarkerRef.current) {
+      tempMarkerRef.current.remove();
+      tempMarkerRef.current = null;
+    }
+
+    if (isSelectingLocation && pendingCoords && pendingImageRef.current) {
+      // Create a customized draggable marker representing the pending photo
+      const tempIcon = L.divIcon({
+        className: 'custom-div-icon temp-marker-icon',
+        html: `
+          <div class="marker-pulse temp-pulse"></div>
+          <div class="marker-pin temp-pin">
+            <div class="marker-pin-inner" style="background-image: url('${pendingImageRef.current.url}');"></div>
+          </div>
+          <div class="marker-drag-badge">📍 גרור אותי</div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 36],
+        popupAnchor: [0, -36]
+      });
+
+      const marker = L.marker(pendingCoords, {
+        icon: tempIcon,
+        draggable: true,
+      }).addTo(mapInstance.current);
+
+      // Listen to dragend event to update pending coordinates
+      marker.on('dragend', () => {
+        const position = marker.getLatLng();
+        setPendingCoords(position);
+      });
+
+      tempMarkerRef.current = marker;
+    }
+
+    return () => {
+      if (tempMarkerRef.current) {
+        tempMarkerRef.current.remove();
+        tempMarkerRef.current = null;
+      }
+    };
+  }, [isSelectingLocation, pendingCoords]);
 
   // Update Tile Layer when mapStyle changes
   useEffect(() => {
@@ -241,6 +252,68 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       setUploadStatus('idle');
       setStatusMessage('');
     }, 4000);
+  };
+
+  const handleConfirmLocation = async () => {
+    if (!pendingImageRef.current || !pendingCoords) return;
+
+    const { url } = pendingImageRef.current;
+    const { lat, lng } = pendingCoords;
+
+    // Reset selection states immediately
+    setIsSelectingLocation(false);
+    setPendingCoords(null);
+    setUploadStatus('reading');
+    setStatusMessage('מזהה את המיקום שבחרת במפה... 🌍');
+
+    try {
+      console.log(`מפענח שם מיקום עבור קואורדינטות ידניות: lat=${lat}, lng=${lng}`);
+      const locationName = await reverseGeocode(lat, lng);
+      const photoDate = new Date().toLocaleDateString('he-IL');
+
+      console.log("מיקום פוענח בהצלחה:", locationName);
+      setStatusMessage(`המיקום נשמר: ${locationName} ✨`);
+
+      // Add to timeline/map
+      onAddEntry({
+        imageUrl: url,
+        note: locationName,
+        date: photoDate,
+        location: {
+          lat,
+          lng,
+          name: locationName
+        }
+      });
+
+      // Fly map to the selected location
+      mapInstance.current?.flyTo([lat, lng], 10);
+      setUploadStatus('success');
+
+      // Clear status after 4 seconds
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setStatusMessage('');
+        pendingImageRef.current = null;
+      }, 4000);
+    } catch (err) {
+      console.error("Failed to reverse geocode manual location:", err);
+      setUploadStatus('error');
+      setStatusMessage('שגיאה בזיהוי המיקום ⚠️');
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setStatusMessage('');
+        pendingImageRef.current = null;
+      }, 4000);
+    }
+  };
+
+  const handleCancelLocation = () => {
+    pendingImageRef.current = null;
+    setPendingCoords(null);
+    setIsSelectingLocation(false);
+    setUploadStatus('idle');
+    setStatusMessage('');
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -346,8 +419,12 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
         // לא נמצאו קואורדינטות GPS בתמונה. נאפשר למשתמש לבחור מיקום ידנית על המפה.
         console.warn("לא נמצאו קואורדינטות GPS בתמונה. מעביר למצב בחירה ידנית.");
         pendingImageRef.current = { url: imageUrl, fileName: file.name };
+        
+        // Initialize coordinates to current map center
+        const center = mapInstance.current ? mapInstance.current.getCenter() : L.latLng(32.0853, 34.7818);
+        setPendingCoords(center);
         setIsSelectingLocation(true);
-        setStatusMessage('לא נמצא מיקום בתמונה. לחץ על המפה כדי למקם אותה 📍');
+        setStatusMessage('לא נמצא מיקום בתמונה. גרור את הסיכה או לחץ על המפה לבחירת מיקום 📍');
       }
     } catch (error) {
       console.error("שגיאה כללית בעיבוד העלאת התמונה:", error);
@@ -375,38 +452,24 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
           </button>
         )}
 
-        {isSelectingLocation && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', direction: 'rtl', width: '100%', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'right' }}>
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--accent-pink)', marginBottom: '2px' }}>
-                לא נמצא מיקום בתמונה
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                לחץ על המפה במקום בו צולמה כדי למקם אותה 📍
-              </span>
+        {isSelectingLocation && pendingImageRef.current && (
+          <div className="location-select-panel">
+            <div className="location-select-header">
+              <img src={pendingImageRef.current.url} className="location-select-thumb" alt="Preview" />
+              <div className="location-select-text">
+                <span className="location-select-title">בחירת מיקום לתמונה 📍</span>
+                <span className="location-select-desc">גרור את הסיכה או לחץ על המפה לשינוי המיקום</span>
+              </div>
             </div>
-            <button 
-              onClick={() => {
-                pendingImageRef.current = null;
-                setIsSelectingLocation(false);
-                setUploadStatus('idle');
-                setStatusMessage('');
-              }}
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid var(--border-color)',
-                borderRadius: '8px',
-                color: '#fff',
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'var(--transition-smooth)'
-              }}
-              className="btn-cancel-select"
-            >
-              ביטול
-            </button>
+            <div className="location-select-actions">
+              <button className="btn-confirm-location" onClick={handleConfirmLocation}>
+                <Check size={14} style={{ marginLeft: '4px' }} />
+                <span>אשר מיקום</span>
+              </button>
+              <button className="btn-cancel-location" onClick={handleCancelLocation}>
+                <span>ביטול</span>
+              </button>
+            </div>
           </div>
         )}
 

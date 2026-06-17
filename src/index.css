@@ -1478,3 +1478,128 @@ body::after {
   animation: spin 1.5s linear infinite;
 }
 
+/* Styles for temporary manual location selection marker */
+.temp-marker-icon .temp-pin {
+  background: var(--accent-pink) !important;
+  box-shadow: 0 0 15px rgba(255, 75, 120, 0.8) !important;
+  border: 2px solid #fff !important;
+  cursor: grab !important;
+}
+
+.temp-marker-icon .temp-pin:active {
+  cursor: grabbing !important;
+}
+
+.temp-pulse {
+  background: rgba(255, 75, 120, 0.4) !important;
+}
+
+.temp-pulse::after {
+  box-shadow: 0 0 1px 3px var(--accent-pink) !important;
+}
+
+.marker-drag-badge {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 22, 37, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--accent-pink);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: float 2s ease-in-out infinite;
+}
+
+/* Location Selection Glassmorphism Panel styles */
+.location-select-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  direction: rtl;
+}
+
+.location-select-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.location-select-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.location-select-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: right;
+}
+
+.location-select-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-pink);
+  margin-bottom: 2px;
+}
+
+.location-select-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.location-select-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.btn-confirm-location {
+  background: linear-gradient(135deg, var(--accent-green), #2ec4b6);
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: var(--transition-smooth);
+  box-shadow: 0 2px 8px rgba(46, 196, 182, 0.3);
+}
+
+.btn-confirm-location:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(46, 196, 182, 0.5);
+}
+
+.btn-cancel-location {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: #fff;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-cancel-location:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
