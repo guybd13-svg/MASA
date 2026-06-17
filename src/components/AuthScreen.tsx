@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Compass, ArrowRight } from 'lucide-react';
 import { supabase } from '../utils/supabaseClient';
-import { MasaLogo } from './MasaLogo';
 
 
 
