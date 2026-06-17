@@ -76,7 +76,11 @@ function App() {
   });
 
   // App Navigation State
-  const [currentScreen, setCurrentScreen] = useState<'map' | 'budget' | 'timeline' | 'checklist' | 'settings'>('map');
+  const [currentScreen, setCurrentScreen] = useState<'map' | 'budget' | 'timeline' | 'checklist' | 'settings'>(() => {
+    const hash = window.location.hash.replace('#', '');
+    const validScreens = ['map', 'budget', 'timeline', 'checklist', 'settings'];
+    return (validScreens.includes(hash) ? hash : 'map') as any;
+  });
   const [highlightedEntryId, setHighlightedEntryId] = useState<string | null>(null);
 
   const handleNavigateToTimeline = (entryId: string) => {
@@ -138,10 +142,6 @@ function App() {
       if (currentHash !== currentScreen) {
         window.location.hash = currentScreen;
       }
-    } else {
-      if (window.location.hash !== '') {
-        window.location.hash = '';
-      }
     }
   }, [currentScreen, user]);
 
@@ -162,22 +162,10 @@ function App() {
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    
-    // Set initial screen based on hash on mount/login
-    if (user) {
-      const initialHash = window.location.hash.replace('#', '');
-      const validScreens = ['map', 'budget', 'timeline', 'checklist', 'settings'];
-      if (validScreens.includes(initialHash)) {
-        setCurrentScreen(initialHash as any);
-      } else {
-        window.location.hash = 'map';
-      }
-    }
-
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
     };
-  }, [user]);
+  }, [user, currentScreen]);
 
   // Listen to Supabase Auth Changes
   useEffect(() => {
@@ -434,6 +422,7 @@ function App() {
     setPackingItems([]);
     setPlacesItems([]);
     setBudgetLimit(5000);
+    window.location.hash = '';
     localStorage.removeItem('travel_user');
     localStorage.removeItem('travel_user_is_manual');
     if (isSupabaseConfigured) {
