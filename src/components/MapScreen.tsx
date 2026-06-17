@@ -201,6 +201,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
     const newLayer = L.tileLayer(STYLE_URLS[mapStyle], {
       attribution: STYLE_ATTRIBUTIONS[mapStyle],
       maxZoom: mapStyle === 'satellite' ? 19 : 20,
+      zIndex: 1,
     }).addTo(mapInstance.current);
 
     tileLayerRef.current = newLayer;
@@ -210,6 +211,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       const overlayLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Labels &copy; Esri',
         maxZoom: 19,
+        zIndex: 10,
       }).addTo(mapInstance.current);
       overlayLayerRef.current = overlayLayer;
     }
