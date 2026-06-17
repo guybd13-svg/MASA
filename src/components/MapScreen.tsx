@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import exifr from 'exifr';
-import { Upload, Check, AlertCircle } from 'lucide-react';
+import { Upload, Check, AlertCircle, Search } from 'lucide-react';
 import { compressImage, reverseGeocode } from '../utils/exifUtils';
 
 interface Location {
@@ -52,6 +52,14 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const tempMarkerRef = useRef<L.Marker | null>(null);
+  const overlayLayerRef = useRef<L.TileLayer | null>(null);
+
+  // States for map search and zoom-dependent geocoding
+  const [currentZoom, setCurrentZoom] = useState(2.5);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [resolvedName, setResolvedName] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Refs for tracking props/state inside Leaflet event listeners to prevent stale closures
   const onAddEntryRef = useRef(onAddEntry);
@@ -98,6 +106,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       if (isSelectingLocationRef.current) {
         setPendingCoords(e.latlng);
       }
+    });
+
+    // Map zoom handler to update currentZoom state
+    map.on('zoomend', () => {
+      setCurrentZoom(map.getZoom());
     });
 
     map.on('popupopen', (e: any) => {
@@ -175,17 +188,31 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    // Remove existing layer if it exists
+    // Remove existing layers if they exist
     if (tileLayerRef.current) {
       tileLayerRef.current.remove();
+    }
+    if (overlayLayerRef.current) {
+      overlayLayerRef.current.remove();
+      overlayLayerRef.current = null;
     }
 
     // Create and add new layer
     const newLayer = L.tileLayer(STYLE_URLS[mapStyle], {
-      attribution: STYLE_ATTRIBUTIONS[mapStyle]
+      attribution: STYLE_ATTRIBUTIONS[mapStyle],
+      maxZoom: mapStyle === 'satellite' ? 19 : 20,
     }).addTo(mapInstance.current);
 
     tileLayerRef.current = newLayer;
+
+    // If satellite style, add boundaries and places overlay to show labels (Hybrid Map)
+    if (mapStyle === 'satellite') {
+      const overlayLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Labels &copy; Esri',
+        maxZoom: 19,
+      }).addTo(mapInstance.current);
+      overlayLayerRef.current = overlayLayer;
+    }
   }, [mapStyle]);
 
   // Update Markers when timeline entries change
@@ -230,6 +257,32 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
     });
   }, [timelineEntries]);
 
+  // Real-time geocoding effect for manual placement pin, updates dynamically on drag or zoom change
+  useEffect(() => {
+    if (!pendingCoords || !isSelectingLocation) {
+      setResolvedName('');
+      return;
+    }
+
+    setIsGeocoding(true);
+    setResolvedName('מזהה מיקום... ⏳');
+
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const zoom = mapInstance.current ? mapInstance.current.getZoom() : 10;
+        const name = await reverseGeocode(pendingCoords.lat, pendingCoords.lng, zoom);
+        setResolvedName(name);
+      } catch (err) {
+        console.error("Error in real-time geocoding:", err);
+        setResolvedName(`${pendingCoords.lat.toFixed(4)}, ${pendingCoords.lng.toFixed(4)}`);
+      } finally {
+        setIsGeocoding(false);
+      }
+    }, 600); // 600ms debounce to avoid spamming the API while dragging
+
+    return () => clearTimeout(delayDebounce);
+  }, [pendingCoords, isSelectingLocation, currentZoom]);
+
   // Central Helper to Save Entry & Update Map
   const saveEntryAndFly = (imageUrl: string, lat: number, lng: number, name: string, date: string) => {
     onAddEntry({
@@ -268,7 +321,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
 
     try {
       console.log(`מפענח שם מיקום עבור קואורדינטות ידניות: lat=${lat}, lng=${lng}`);
-      const locationName = await reverseGeocode(lat, lng);
+      const locationName = resolvedName && resolvedName !== 'מזהה מיקום... ⏳'
+        ? resolvedName
+        : await reverseGeocode(lat, lng, mapInstance.current?.getZoom() || 10);
       const photoDate = new Date().toLocaleDateString('he-IL');
 
       console.log("מיקום פוענח בהצלחה:", locationName);
@@ -314,6 +369,44 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
     setIsSelectingLocation(false);
     setUploadStatus('idle');
     setStatusMessage('');
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !mapInstance.current) return;
+
+    setIsSearching(true);
+    try {
+      console.log("מבצע חיפוש עבור:", searchQuery);
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&accept-language=he,en`, {
+        headers: {
+          'User-Agent': 'MasaTravelApp/1.0'
+        }
+      });
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lon);
+        
+        console.log("נמצא מיקום:", display_name, "קואורדינטות:", latitude, longitude);
+        
+        // Fly to location
+        mapInstance.current.flyTo([latitude, longitude], 12);
+        
+        // If selecting manual location, move the pin there
+        if (isSelectingLocation) {
+          setPendingCoords(L.latLng(latitude, longitude));
+        }
+      } else {
+        alert('לא נמצאו תוצאות עבור החיפוש ⚠️');
+      }
+    } catch (err) {
+      console.error("Search failed:", err);
+      alert('שגיאה בביצוע החיפוש ⚠️');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -440,6 +533,21 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
 
   return (
     <div className="map-screen">
+      {/* Floating Map Search Bar */}
+      <div className="map-search-container">
+        <input
+          type="text"
+          placeholder="חפש מיקום במפה..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          className="map-search-input"
+        />
+        <button onClick={handleSearch} className="btn-map-search" disabled={isSearching}>
+          <Search size={16} className={isSearching ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
       {/* Map div */}
       <div ref={mapRef} className="map-container" />
 
@@ -457,12 +565,19 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
             <div className="location-select-header">
               <img src={pendingImageRef.current.url} className="location-select-thumb" alt="Preview" />
               <div className="location-select-text">
-                <span className="location-select-title">בחירת מיקום לתמונה 📍</span>
-                <span className="location-select-desc">גרור את הסיכה או לחץ על המפה לשינוי המיקום</span>
+                <span className="location-select-title">
+                  {isGeocoding ? 'מזהה מיקום... 🌍' : resolvedName || 'בחירת מיקום לתמונה'}
+                </span>
+                <span className="location-select-desc">גרור את הסיכה או לחץ על המפה לשינוי המיקום (הדיוק לפי הזום)</span>
               </div>
             </div>
             <div className="location-select-actions">
-              <button className="btn-confirm-location" onClick={handleConfirmLocation}>
+              <button 
+                className="btn-confirm-location" 
+                onClick={handleConfirmLocation}
+                disabled={isGeocoding || !resolvedName || resolvedName === 'מזהה מיקום... ⏳'}
+                style={{ opacity: (isGeocoding || !resolvedName || resolvedName === 'מזהה מיקום... ⏳') ? 0.6 : 1 }}
+              >
                 <Check size={14} style={{ marginLeft: '4px' }} />
                 <span>אשר מיקום</span>
               </button>

@@ -1603,3 +1603,68 @@ body::after {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Floating Map Search Bar Styles */
+.map-search-container {
+  position: absolute;
+  top: 94px;
+  left: 24px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  background: rgba(20, 22, 37, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 4px 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  width: 280px;
+  direction: rtl;
+  transition: var(--transition-smooth);
+}
+
+.map-search-container:focus-within {
+  border-color: var(--accent-purple);
+  box-shadow: 0 8px 32px rgba(157, 78, 221, 0.25);
+  width: 320px;
+}
+
+.map-search-input {
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  width: 100%;
+  outline: none;
+}
+
+.map-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.btn-map-search {
+  background: var(--accent-purple);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.btn-map-search:hover {
+  background: var(--accent-pink);
+  transform: scale(1.05);
+}
+
+.btn-map-search:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+

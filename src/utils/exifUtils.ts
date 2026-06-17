@@ -124,10 +124,12 @@ export function compressImage(file: File): Promise<string> {
 
 /**
  * Performs reverse geocoding using OpenStreetMap Nominatim API to get a human-readable location name.
+ * Accepts an optional zoom parameter to control address specificity (0=country, 10=city, 18=street).
  */
-export async function reverseGeocode(lat: number, lng: number): Promise<string> {
+export async function reverseGeocode(lat: number, lng: number, zoom?: number): Promise<string> {
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=he,en`, {
+    const zoomParam = zoom !== undefined ? `&zoom=${Math.round(zoom)}` : '';
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}${zoomParam}&accept-language=he,en`, {
       headers: {
         'User-Agent': 'MasaTravelApp/1.0'
       }
@@ -135,7 +137,8 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     const data = await response.json();
     if (data && data.address) {
       const addr = data.address;
-      const place = data.name || addr.tourism || addr.historic || addr.amenity || addr.building;
+      // Use road/street names if zoomed in deep
+      const place = data.name || addr.tourism || addr.historic || addr.amenity || addr.building || addr.road;
       const city = addr.city || addr.town || addr.village || addr.suburb || addr.city_district;
       const country = addr.country;
 
