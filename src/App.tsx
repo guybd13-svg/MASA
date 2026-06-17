@@ -131,6 +131,54 @@ function App() {
     });
   }, []);
 
+  // Synchronize currentScreen to URL hash
+  useEffect(() => {
+    if (user) {
+      const currentHash = window.location.hash.replace('#', '');
+      if (currentHash !== currentScreen) {
+        window.location.hash = currentScreen;
+      }
+    } else {
+      if (window.location.hash !== '') {
+        window.location.hash = '';
+      }
+    }
+  }, [currentScreen, user]);
+
+  // Listen for hash changes to navigate back/forth
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (!user) return;
+      const hash = window.location.hash.replace('#', '');
+      const validScreens = ['map', 'budget', 'timeline', 'checklist', 'settings'];
+      if (validScreens.includes(hash)) {
+        setCurrentScreen(hash as any);
+      } else {
+        const currentHash = window.location.hash.replace('#', '');
+        if (currentHash !== currentScreen) {
+          window.location.hash = currentScreen;
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Set initial screen based on hash on mount/login
+    if (user) {
+      const initialHash = window.location.hash.replace('#', '');
+      const validScreens = ['map', 'budget', 'timeline', 'checklist', 'settings'];
+      if (validScreens.includes(initialHash)) {
+        setCurrentScreen(initialHash as any);
+      } else {
+        window.location.hash = 'map';
+      }
+    }
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [user]);
+
   // Listen to Supabase Auth Changes
   useEffect(() => {
     if (!isSupabaseConfigured) {
