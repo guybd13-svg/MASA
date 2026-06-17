@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Compass, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { supabase } from '../utils/supabaseClient';
+import { MasaLogo } from './MasaLogo';
 
 
 
@@ -107,7 +108,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     <div className="auth-screen">
       <div className="auth-logo-container">
         <div className="auth-logo-glow">
-          <Compass className="auth-logo-icon" />
+          <MasaLogo className="auth-logo-icon" />
         </div>
         <h1 className="auth-title">MASA</h1>
         <p className="auth-subtitle">השותף המושלם שלך לניהול תקציב, מסלולים ויומן חוויות מכל טיול בעולם</p>
