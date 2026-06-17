@@ -47,6 +47,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
 
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'reading' | 'success' | 'error'>('idle');
   const [statusMessage, setStatusMessage] = useState('');
+  const [isSelectingLocation, setIsSelectingLocation] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Refs for tracking props/state inside Leaflet event listeners to prevent stale closures
@@ -92,6 +93,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
 
         // Reset the pending reference immediately to prevent double submissions
         pendingImageRef.current = null;
+        setIsSelectingLocation(false);
         setUploadStatus('reading');
         setStatusMessage('מזהה את המיקום שבחרת במפה... 🌍');
 
@@ -341,31 +343,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
         setUploadStatus('success');
         setTimeout(() => setUploadStatus('idle'), 3000);
       } else {
-        // אם לא נמצאו קואורדינטות GPS, נציב במרכז המפה הנוכחי
-        console.warn("לא נמצאו קואורדינטות GPS בתמונה. מציב במרכז המפה הנוכחי.");
-        const map = mapInstance.current;
-        const center = map ? map.getCenter() : { lat: 32.0853, lng: 34.7818 }; // ברירת מחדל תל אביב
-        const lat = center.lat;
-        const lng = center.lng;
-
-        setStatusMessage('לא נמצא מיקום בתמונה. מזהה שם מיקום במרכז המפה... 🌍');
-
-        let locationName = 'מרכז המפה';
-        try {
-          locationName = await reverseGeocode(lat, lng);
-        } catch (geoErr) {
-          console.error("Reverse geocoding failed for map center:", geoErr);
-          locationName = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-        }
-
-        const finalName = `${locationName} (ללא GPS)`;
-        console.log("מיקום שנבחר אוטומטית:", finalName);
-        setStatusMessage(`התמונה מוקמה ב: ${locationName} 📍`);
-
-        saveEntryAndFly(imageUrl, lat, lng, finalName, photoDate);
-
-        setUploadStatus('success');
-        setTimeout(() => setUploadStatus('idle'), 3000);
+        // לא נמצאו קואורדינטות GPS בתמונה. נאפשר למשתמש לבחור מיקום ידנית על המפה.
+        console.warn("לא נמצאו קואורדינטות GPS בתמונה. מעביר למצב בחירה ידנית.");
+        pendingImageRef.current = { url: imageUrl, fileName: file.name };
+        setIsSelectingLocation(true);
+        setStatusMessage('לא נמצא מיקום בתמונה. לחץ על המפה כדי למקם אותה 📍');
       }
     } catch (error) {
       console.error("שגיאה כללית בעיבוד העלאת התמונה:", error);
@@ -385,22 +367,57 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       <div ref={mapRef} className="map-container" />
 
       {/* Floating Control Bar */}
-      <div className="map-floating-bar">
-        {uploadStatus === 'idle' && (
+      <div className="map-floating-bar" style={{ minWidth: isSelectingLocation ? '360px' : 'auto' }}>
+        {uploadStatus === 'idle' && !isSelectingLocation && (
           <button className="btn-upload-trigger" onClick={() => fileInputRef.current?.click()}>
             <Upload size={14} style={{ marginLeft: '6px' }} />
             <span>העלה תמונה</span>
           </button>
         )}
 
-        {(uploadStatus === 'reading' || uploadStatus === 'error') && (
+        {isSelectingLocation && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', direction: 'rtl', width: '100%', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'right' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--accent-pink)', marginBottom: '2px' }}>
+                לא נמצא מיקום בתמונה
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                לחץ על המפה במקום בו צולמה כדי למקם אותה 📍
+              </span>
+            </div>
+            <button 
+              onClick={() => {
+                pendingImageRef.current = null;
+                setIsSelectingLocation(false);
+                setUploadStatus('idle');
+                setStatusMessage('');
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                color: '#fff',
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'var(--transition-smooth)'
+              }}
+              className="btn-cancel-select"
+            >
+              ביטול
+            </button>
+          </div>
+        )}
+
+        {!isSelectingLocation && (uploadStatus === 'reading' || uploadStatus === 'error') && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: uploadStatus === 'error' ? 'var(--accent-pink)' : '#fff' }}>
             {uploadStatus === 'error' && <AlertCircle size={16} />}
             <span className="upload-info-text">{statusMessage}</span>
           </div>
         )}
 
-        {uploadStatus === 'success' && (
+        {!isSelectingLocation && uploadStatus === 'success' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)' }}>
             <Check size={16} />
             <span className="upload-info-text">{statusMessage}</span>
