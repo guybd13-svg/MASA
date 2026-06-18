@@ -1668,3 +1668,171 @@ body::after {
   cursor: not-allowed;
 }
 
+/* ========================================================
+   MOBILE & RESPONSIVE UX ENHANCEMENTS
+   ======================================================== */
+.bottom-navbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .top-navbar {
+    padding: 0 16px !important;
+  }
+  
+  .navbar-logo-text {
+    font-size: 18px !important;
+  }
+  
+  .navbar-nav {
+    display: none !important; /* Hide standard navigation links in header on mobile */
+  }
+  
+  .btn-logout-navbar span {
+    display: none !important; /* Hide text of logout button on mobile, show only icon */
+  }
+  
+  .btn-logout-navbar {
+    padding: 8px !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    justify-content: center !important;
+  }
+  
+  .navbar-user-section {
+    gap: 8px !important;
+  }
+  
+  .navbar-user-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .main-content {
+    height: 100vh;
+  }
+  
+  .map-wrapper-layer {
+    bottom: 60px !important; /* Make room for bottom navigation */
+  }
+  
+  .glass-screen-overlay {
+    height: calc(100% - 130px) !important; /* top: 70px, bottom: 60px */
+    bottom: 60px !important;
+    padding: 20px 16px !important; /* smaller padding for mobile overlays */
+  }
+
+  /* Bottom Navbar styling */
+  .bottom-navbar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(14, 16, 28, 0.8) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 8px;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    direction: rtl;
+  }
+  
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    font-family: var(--font-family);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 25%;
+    height: 100%;
+    transition: var(--transition-smooth);
+    position: relative;
+  }
+  
+  .bottom-nav-item.active {
+    color: var(--accent-purple);
+  }
+  
+  .bottom-nav-item.active .nav-icon {
+    color: var(--accent-purple);
+    filter: drop-shadow(0 0 6px var(--accent-purple));
+  }
+  
+  .bottom-nav-item .nav-icon {
+    color: var(--text-secondary);
+    transition: transform 0.2s ease;
+  }
+  
+  .bottom-nav-item.active .nav-icon {
+    color: var(--accent-purple);
+  }
+
+  .bottom-nav-item:active .nav-icon {
+    transform: scale(0.9);
+  }
+
+  /* Adjust timeline grid columns on smaller screens */
+  .timeline-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+/* Specific styling for map controls overlap on phone screen sizes */
+@media (max-width: 600px) {
+  .map-search-container {
+    top: 82px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  
+  .map-search-container:focus-within {
+    width: auto !important;
+  }
+  
+  .map-floating-bar {
+    top: auto !important;
+    bottom: 76px !important; /* Positioned just above the mobile bottom navbar */
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    justify-content: center !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5) !important;
+    flex-direction: row !important;
+    padding: 8px 16px !important;
+  }
+  
+  .location-select-panel {
+    gap: 8px !important;
+  }
+  
+  .location-select-header {
+    flex-direction: row-reverse !important;
+  }
+  
+  .location-select-actions {
+    justify-content: center !important;
+  }
+  
+  .leaflet-bottom.leaflet-right {
+    bottom: 136px !important; /* Raise leaflet zoom controls above map-floating-bar and bottom-navbar */
+  }
+}
+
+

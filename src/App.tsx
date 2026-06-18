@@ -932,7 +932,40 @@ function App() {
         </div>
       </main>
 
+      {/* Bottom Navbar for Mobile Screens */}
+      <nav className="bottom-navbar">
+        <button
+          className={`bottom-nav-item ${currentScreen === 'map' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('map')}
+        >
+          <Map className="nav-icon" size={20} />
+          <span>מפה</span>
+        </button>
 
+        <button
+          className={`bottom-nav-item ${currentScreen === 'budget' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('budget')}
+        >
+          <DollarSign className="nav-icon" size={20} />
+          <span>תקציב</span>
+        </button>
+
+        <button
+          className={`bottom-nav-item ${currentScreen === 'timeline' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('timeline')}
+        >
+          <Image className="nav-icon" size={20} />
+          <span>יומן מסע</span>
+        </button>
+
+        <button
+          className={`bottom-nav-item ${currentScreen === 'checklist' ? 'active' : ''}`}
+          onClick={() => setCurrentScreen('checklist')}
+        >
+          <ClipboardList className="nav-icon" size={20} />
+          <span>רשימות</span>
+        </button>
+      </nav>
     </div>
   );
 }
