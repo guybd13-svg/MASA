@@ -41,6 +41,39 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({
   const [category, setCategory] = useState('אוכל');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currency, setCurrency] = useState<'ILS' | 'USD' | 'EUR' | 'GBP' | 'CUSTOM'>('ILS');
+  const [exchangeRate, setExchangeRate] = useState<number>(1);
+
+  const handleCurrencyChange = (cur: 'ILS' | 'USD' | 'EUR' | 'GBP' | 'CUSTOM') => {
+    setCurrency(cur);
+    switch (cur) {
+      case 'ILS':
+        setExchangeRate(1);
+        break;
+      case 'USD':
+        setExchangeRate(3.7);
+        break;
+      case 'EUR':
+        setExchangeRate(4.0);
+        break;
+      case 'GBP':
+        setExchangeRate(4.7);
+        break;
+      case 'CUSTOM':
+        setExchangeRate(1);
+        break;
+    }
+  };
+
+  const getCurrencySymbol = (cur: string) => {
+    switch (cur) {
+      case 'ILS': return '₪';
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      default: return '';
+    }
+  };
 
   const totalSpent = expenses.reduce((sum, item) => sum + item.amount, 0);
   const balance = budgetLimit - totalSpent;
@@ -69,16 +102,22 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) return;
 
+    const finalAmount = currency === 'ILS' ? parsedAmount : parsedAmount * exchangeRate;
+    const suffix = currency !== 'ILS' ? ` (${parsedAmount}${getCurrencySymbol(currency)})` : '';
+    const finalDescription = description.trim() ? `${description.trim()}${suffix}` : `${category}${suffix}`;
+
     onAddExpense({
-      amount: parsedAmount,
+      amount: Number(finalAmount.toFixed(2)),
       category,
-      description: description || category,
+      description: finalDescription,
       date: new Date(date).toLocaleDateString('he-IL'),
     });
 
     // Reset Form
     setAmount('');
     setDescription('');
+    setCurrency('ILS');
+    setExchangeRate(1);
     setIsFormOpen(false);
   };
 
@@ -289,18 +328,76 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({
           <form className="modal-card" onSubmit={handleSubmitExpense}>
             <div className="modal-title">הוספת הוצאה חדשה</div>
 
-            <div className="form-group">
-              <label>סכום (₪)</label>
-              <input
-                type="number"
-                required
-                className="form-input"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                autoFocus
-              />
+            <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', direction: 'rtl' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', textAlign: 'right' }}>מטבע</label>
+                <select
+                  className="form-input"
+                  value={currency}
+                  onChange={(e) => handleCurrencyChange(e.target.value as any)}
+                  style={{ textAlign: 'right' }}
+                >
+                  <option value="ILS">₪ ILS (שקלים)</option>
+                  <option value="USD">$ USD (דולר)</option>
+                  <option value="EUR">€ EUR (אירו)</option>
+                  <option value="GBP">£ GBP (ליש"ט)</option>
+                  <option value="CUSTOM">מטבע אחר (ידני)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', textAlign: 'right' }}>סכום במטבע מקור</label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  className="form-input"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  autoFocus
+                  style={{ textAlign: 'right' }}
+                />
+              </div>
             </div>
+
+            {currency !== 'ILS' && (
+              <div className="form-group animate-fade-in" style={{ direction: 'rtl' }}>
+                <label style={{ display: 'block', marginBottom: '6px', textAlign: 'right' }}>שער חליפין (כמה שווה 1 במטבע זה בשקלים ₪)</label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  className="form-input"
+                  value={exchangeRate}
+                  onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 0)}
+                  placeholder="לדוגמה: 3.7"
+                  style={{ textAlign: 'right' }}
+                />
+              </div>
+            )}
+
+            {amount && currency !== 'ILS' && (
+              <div className="form-group" style={{
+                background: 'rgba(157, 78, 221, 0.1)',
+                border: '1px solid rgba(157, 78, 221, 0.3)',
+                borderRadius: '12px',
+                padding: '12px',
+                textAlign: 'center',
+                marginTop: '8px',
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                direction: 'rtl'
+              }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>סכום מוערך בשקלים:</span>
+                <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-purple)' }} dir="ltr">
+                  ₪{(parseFloat(amount) * exchangeRate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+            )}
 
             <div className="form-group">
               <label>קטגוריה</label>
@@ -343,7 +440,13 @@ export const BudgetScreen: React.FC<BudgetScreenProps> = ({
               <button type="submit" className="btn-form-save">
                 שמור הוצאה
               </button>
-              <button type="button" className="btn-form-cancel" onClick={() => setIsFormOpen(false)}>
+              <button type="button" className="btn-form-cancel" onClick={() => {
+                setIsFormOpen(false);
+                setCurrency('ILS');
+                setExchangeRate(1);
+                setAmount('');
+                setDescription('');
+              }}>
                 ביטול
               </button>
             </div>
