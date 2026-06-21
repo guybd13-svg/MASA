@@ -88,6 +88,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({ timelineEntries, mapStyle,
       center: [20, 0],
       zoom: 2.5,
       zoomControl: false,
+      attributionControl: false,
     });
 
     // Create active tile layer
