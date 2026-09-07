@@ -28,14 +28,14 @@ interface MapScreenProps {
 const STYLE_URLS = {
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   light: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-  osm: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  osm: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
 };
 
 const STYLE_ATTRIBUTIONS = {
   dark: '&copy; OpenStreetMap &copy; CartoDB',
   light: '&copy; OpenStreetMap &copy; CartoDB',
-  osm: '&copy; OpenStreetMap contributors',
+  osm: '&copy; OpenStreetMap contributors &copy; CARTO',
   satellite: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
 };
 
