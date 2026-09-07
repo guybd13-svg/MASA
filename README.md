@@ -48,9 +48,73 @@
 | **ממשק משתמש וריספונסיביות** | **כן** (ממשק Glassmorphism RTL) | לא (מסורבל בנייד) | כן | כן |
 | **איחוד תחת ממשק אחד** | **כן** (הכל מסונכרן) | לא | לא | לא |
 
-**הבידול של MASA:** הבידול המרכזי הוא ה**סינכרון הוויזואלי החכם**. העלאת תמונה בודדת מייצרת בו זמנית סיכת מפה, רשומה כרונולוגית ביומן המסע, ומזהה את שם המיקום הגיאוגרפי המדויק. החיבור של מנגנון ניהול התקציב במטבעות זרים יחד עם תיעוד החוויות והכנת הציוד בממשק כהה, מהיר ומעוצב ללא placeholders, מעניק למטייל חוויית שליטה וזיכרון שאינה קיימת באף כלי בנפרד.
+---
 
+## 🗄️ תרשים ERD של בסיס הנתונים (Database ERD Diagram)
 
+להלן תרשים קשרי ישויות (Entity-Relationship Diagram) של מסד הנתונים ב-Supabase:
+
+```mermaid
+erDiagram
+    profiles ||--o{ timeline : "owns"
+    profiles ||--o{ expenses : "pays"
+    profiles ||--o{ checklist : "tracks"
+
+    profiles {
+        uuid id PK "Primary Key (linked to Auth)"
+        text full_name "User Display Name"
+        text avatar_url "Profile Photo URL"
+        numeric budget_limit "Trip Budget Max Limit"
+    }
+
+    timeline {
+        uuid id PK "Primary Key"
+        uuid user_id FK "Foreign Key -> profiles"
+        text image_url "Storage Photo URL"
+        text note "Travel memories caption"
+        text date "EXIF or Manual date"
+        float lat "GPS Latitude coordinate"
+        float lng "GPS Longitude coordinate"
+        text location_name "Geocoded address name"
+        timestamp created_at "Automatic timestamp"
+    }
+
+    expenses {
+        uuid id PK "Primary Key"
+        uuid user_id FK "Foreign Key -> profiles"
+        numeric amount "Expense cash amount in NIS"
+        text currency "Foreign currency code (USD, EUR, GBP...)"
+        numeric original_amount "Original foreign currency amount"
+        text category "lodging, food, transport, shopping..."
+        text description "Title of the expense"
+        text date "Date of payment"
+        timestamp created_at "Automatic timestamp"
+    }
+
+    checklist {
+        uuid id PK "Primary Key"
+        uuid user_id FK "Foreign Key -> profiles"
+        text name "Task or packing item title"
+        text category "packing or destinations"
+        boolean completed "Checklist completion status"
+        timestamp created_at "Automatic timestamp"
+    }
+```
+
+---
+
+## 🔌 שירותים חיצוניים ואינטגרציות (External Services & Integrations)
+
+| שירות / אינטגרציה | ייעוד ותפקיד באפליקציה | מנגנון חיבור |
+| :--- | :--- | :--- |
+| **Supabase Cloud** | בסיס נתונים PostgreSQL, ניהול משתמשים ו-Row Level Security (RLS). | `@supabase/supabase-js` SDK |
+| **Google OAuth 2.0** | אימות זהות משתמשים מאובטח בלחיצת כפתור אחת. | Supabase Auth Provider |
+| **CartoDB & Leaflet** | תצוגת מפות אינטראקטיביות בינלאומיות עם תגיות באנגלית. | `leaflet` + CartoDB Voyager Tile API |
+| **OpenStreetMap Nominatim** | המרת קואורדינטות GPS לכתובת ומיקום בעברית/אנגלית (Reverse Geocoding). | REST API HTTP Fetch |
+| **EXIF Metadata Engine** | חילוץ אוטומטי של קואורדינטות ותאריך צילום מקובצי תמונות (`exifr`). | Client-side Binary Parser |
+| **Vercel** | אחסון, פריסה רציפה (CI/CD) והנגשת האתר בענן. | Git Integration with Vercel CLI |
+
+---
 
 ## 🛠️ הוראות הרצה בסיסיות (Setup & Installation)
 
