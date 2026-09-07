@@ -147,32 +147,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           )}
         </button>
 
-        <button 
-          type="button"
-          className="btn-demo-login" 
-          onClick={handleStartGoogleLogin}
-          style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#fff',
-            padding: '12px 24px',
-            borderRadius: '16px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginTop: '10px',
-            width: '100%',
-            maxWidth: '280px',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
-          }}
-        >
-          <span>✨ כניסה מהירה (מצב אורח / דמו)</span>
-        </button>
-
         <p className="auth-disclaimer">
           בלחיצה על התחברות, אתה מסכים לתנאי השימוש ומדיניות הפרטיות של MASA.
         </p>
